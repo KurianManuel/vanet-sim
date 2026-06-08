@@ -1,4 +1,3 @@
-@"
 # VANET Simulation Monitor
 
 A real-time network simulation web app for VANET (Vehicular Ad hoc Network) authentication protocol efficiency analysis.
