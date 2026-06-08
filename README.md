@@ -14,4 +14,4 @@ A real-time network simulation web app for VANET (Vehicular Ad hoc Network) auth
 
 ## Setup
 See docs for WSL2 + NS-3 installation steps.
-"@ | Out-File -FilePath C:\intern\vanet-sim\README.md -Encoding utf8
+"@ | Out-File -FilePath vanet-sim\README.md -Encoding utf8
