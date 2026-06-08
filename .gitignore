@@ -8,8 +8,6 @@ backend/__pycache__/
 backend/*.pyc
 backend/.env
 
-# NS-3 (not committed — too large)
-ns3/
 
 # OS
 .DS_Store
