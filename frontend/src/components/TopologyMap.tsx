@@ -185,6 +185,9 @@ export function TopologyMap({ state, config }: Props) {
         <div className="leg-item">
           <div className="leg-dot" style={{ background: 'rgba(245,158,11,0.15)', border: '1px dashed #f59e0b' }} /> RSU Coverage Zone
         </div>
+        <div className="topo-channel-note">
+          802.11p · 5.9 GHz · 16 dBm · Log-normal shadowing σ=8dB · Sensitivity −80 dBm
+        </div>
       </div>
     </div>
   )

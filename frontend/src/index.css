@@ -1071,3 +1071,28 @@ html, body, #root { overflow: hidden; }
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #1e2a3a; border-radius: 2px; }
+
+.run-badge { cursor: pointer; transition: opacity 0.15s; }
+.run-badge:hover { opacity: 0.85; }
+.run-badge.selected { box-shadow: 0 0 0 2px currentColor; }
+.run-badge-log-hint { font-size: 9px; color: #9ca3af; }
+
+.log-historic-badge {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(245,158,11,0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245,158,11,0.3);
+}
+
+.topo-channel-note {
+  margin-left: auto;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: #3a4a5a;
+  letter-spacing: 0.5px;
+  align-self: center;
+}

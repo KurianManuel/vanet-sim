@@ -31,21 +31,33 @@ function eventToEntry(event: SimEvent): LogEntry | null {
     const e = event as Extract<SimEvent, { event: 'MSG_SENT' | 'MSG_RECV' }>
     const phase = (e as Record<string, unknown>).phase as string | undefined
     const dir   = (e as Record<string, unknown>).direction as string | undefined
+    const retry = (e as Record<string, unknown>).retry as number | undefined
+    const failed = (e as Record<string, unknown>).failed as boolean | undefined
 
     let category: LogCategory = 'REGISTRATION'
     if (e.msg_type.startsWith('AUTH'))        category = 'AUTHENTICATION'
     else if (e.msg_type.startsWith('KEY'))    category = 'KEY_EXCHANGE'
 
     const label = t === 'MSG_SENT' ? '→' : '←'
-    const detail = [
-      phase ? `phase: ${phase}` : null,
-      dir   ? `dir: ${dir}` : null,
-      `latency: ${e.latency_ms.toFixed(2)}ms`,
-    ].filter(Boolean).join(' | ')
+
+    let detail: string
+    if (!e.success && failed) {
+      detail = `Packet permanently lost after 3 retries. Vehicle was likely outside RSU coverage (>${ (e as Record<string,unknown>).bytes ?? '?'}B dropped). Protocol phase cannot complete until vehicle re-enters range.`
+    } else if (!e.success && retry) {
+      detail = `Packet dropped by 802.11p channel (attempt ${retry}/3). Cause: log-normal shadowing or Rayleigh fading pushed received signal below -80 dBm threshold. Retrying with ${retry === 1 ? '500' : retry === 2 ? '1000' : '2000'}ms backoff.`
+    } else if (!e.success) {
+      detail = `Packet dropped by 802.11p PHY layer — received signal power fell below -80 dBm sensitivity threshold. Retrying…`
+    } else {
+      detail = [
+        phase ? `phase: ${phase}` : null,
+        dir   ? `dir: ${dir}` : null,
+        `latency: ${e.latency_ms.toFixed(2)}ms`,
+      ].filter(Boolean).join(' | ')
+    }
 
     return makeEntry(
       e.time,
-      e.success ? 'success' : 'error',
+      e.success ? 'success' : (failed ? 'error' : 'warning'),
       category,
       `${label} ${e.msg_type}  node ${e.src} → node ${e.dst}`,
       { detail, success: e.success, src: e.src, dst: e.dst }
