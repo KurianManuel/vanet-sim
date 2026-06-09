@@ -73,6 +73,13 @@ export interface SimSummary {
   authenticated: number
   keys_exchanged: number
   msg_counts: Record<string, number>
+  // New packet-level metrics
+  total_bytes_sent: number
+  total_pkt_sent: number
+  total_pkt_dropped: number
+  total_pkt_failed: number
+  throughput_bps: number
+  msg_loss_ratio: number
 }
 
 export type SimEvent =
@@ -100,6 +107,9 @@ export interface SimState {
     auth_latency: number[]
     key_exchange_latency: number[]
     rsu_load: number[]
+    e2e_delay: number[]
+    throughput_bps: number[]
+    msg_loss_ratio: number[]
   }
   handoffs: HandoffEvent[]
   collisions: number

@@ -13,6 +13,9 @@ const initialState = (): SimState => ({
     auth_latency: [],
     key_exchange_latency: [],
     rsu_load: [],
+    e2e_delay: [],
+    throughput_bps: [],
+    msg_loss_ratio: [],
   },
   handoffs: [],
   collisions: 0,
@@ -48,9 +51,12 @@ export function useSimulation(onEvent?: (e: SimEvent) => void) {
         const e = event as Extract<SimEvent, { event: 'METRIC' }>
         const metrics = { ...prev.metrics }
         if (e.metric === 'registration_latency_ms') metrics.registration_latency = [...prev.metrics.registration_latency, e.value]
-        if (e.metric === 'auth_latency_ms') metrics.auth_latency = [...prev.metrics.auth_latency, e.value]
+        if (e.metric === 'auth_latency_ms')         metrics.auth_latency         = [...prev.metrics.auth_latency, e.value]
         if (e.metric === 'key_exchange_latency_ms') metrics.key_exchange_latency = [...prev.metrics.key_exchange_latency, e.value]
-        if (e.metric === 'rsu_load') metrics.rsu_load = [...prev.metrics.rsu_load, e.value]
+        if (e.metric === 'rsu_load')                metrics.rsu_load             = [...prev.metrics.rsu_load, e.value]
+        if (e.metric === 'e2e_delay_ms')            metrics.e2e_delay            = [...prev.metrics.e2e_delay, e.value]
+        if (e.metric === 'throughput_bps')          metrics.throughput_bps       = [...prev.metrics.throughput_bps, e.value]
+        if (e.metric === 'msg_loss_ratio')          metrics.msg_loss_ratio       = [...prev.metrics.msg_loss_ratio, e.value]
         next.metrics = metrics
         return next
       }

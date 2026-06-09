@@ -10,6 +10,8 @@ interface Props {
   runs: RunRecord[]
   onRemove: (id: number) => void
   onClear: () => void
+  selectedRunId: number | null
+  onSelectRun: (id: number | null) => void
 }
 
 function avg(arr: number[]) {
@@ -20,10 +22,14 @@ const COMPARE_METRICS = [
   { key: 'avg_registration_latency_ms', label: 'AVG REG',      unit: 'ms', tip: 'Average registration latency across all vehicles in this run.' },
   { key: 'avg_auth_latency_ms',         label: 'AVG AUTH',     unit: 'ms', tip: 'Average authentication latency per vehicle.' },
   { key: 'avg_key_exchange_latency_ms', label: 'AVG KEY EX',   unit: 'ms', tip: 'Average key exchange latency per vehicle.' },
+  { key: 'avg_rsu_load',                label: 'AVG RSU LOAD', unit: '',   tip: 'Average RSU load ratio (vehicles ÷ RSUs).' },
+  { key: 'throughput_bps',              label: 'THROUGHPUT',   unit: 'bps',tip: 'Final network throughput — total bytes × 8 ÷ simulation time.' },
+  { key: 'msg_loss_ratio',              label: 'LOSS RATIO',   unit: '%',  tip: 'Final message loss ratio — dropped packets ÷ total attempted.' },
   { key: 'total_handoffs',              label: 'HANDOFFS',     unit: '',   tip: 'Total handoff events where a vehicle changed RSU.' },
   { key: 'successful_handoffs',         label: 'H/OFF OK',     unit: '',   tip: 'Handoffs where vehicle successfully re-registered with new RSU.' },
   { key: 'failed_handoffs',             label: 'H/OFF FAIL',   unit: '',   tip: 'Handoffs where vehicle left coverage without entering a new RSU zone.' },
   { key: 'total_collisions',            label: 'COLLISIONS',   unit: '',   tip: 'Total 802.11p PHY layer collisions detected.' },
+  { key: 'total_pkt_failed',            label: 'PKT FAILED',   unit: '',   tip: 'Packets that exhausted all 3 retries and permanently failed.' },
   { key: 'registered',                  label: 'REGISTERED',   unit: '',   tip: 'Vehicles that completed registration by end of simulation.' },
   { key: 'authenticated',               label: 'AUTHED',       unit: '',   tip: 'Vehicles that completed authentication by end of simulation.' },
   { key: 'keys_exchanged',              label: 'KEYS EX',      unit: '',   tip: 'Vehicles that completed key exchange by end of simulation.' },
@@ -47,7 +53,7 @@ const tooltipStyle = {
   labelStyle: { color: '#94a3b8' },
 }
 
-export function ComparisonPanel({ runs, onRemove, onClear }: Props) {
+export function ComparisonPanel({ runs, onRemove, onClear, selectedRunId, onSelectRun }: Props) {
   if (runs.length === 0) {
     return (
       <div className="panel comparison-empty">
@@ -77,13 +83,22 @@ export function ComparisonPanel({ runs, onRemove, onClear }: Props) {
         {/* Run badges */}
         <div className="run-badges">
           {runs.map((r, i) => (
-            <div key={r.id} className="run-badge" style={{ borderColor: RUN_COLORS[i] }}>
+            <div
+              key={r.id}
+              className={`run-badge ${selectedRunId === r.id ? 'selected' : ''}`}
+              style={{ borderColor: RUN_COLORS[i] }}
+              onClick={() => onSelectRun(selectedRunId === r.id ? null : r.id)}
+              title="Click to view this run's log below"
+            >
               <span className="run-badge-dot" style={{ background: RUN_COLORS[i] }} />
               <span className="run-badge-label">{r.label}</span>
               <span className="run-badge-cfg">
                 {r.config.n_vehicles}V / {r.config.n_rsus}R / {r.config.sim_time}s / {r.config.vehicle_speed}m/s
               </span>
-              <button className="run-badge-remove" onClick={() => onRemove(r.id)}>✕</button>
+              <span className="run-badge-log-hint">
+                {selectedRunId === r.id ? '▼ log' : '☰ log'}
+              </span>
+              <button className="run-badge-remove" onClick={e => { e.stopPropagation(); onRemove(r.id) }}>✕</button>
             </div>
           ))}
         </div>
@@ -109,11 +124,19 @@ export function ComparisonPanel({ runs, onRemove, onClear }: Props) {
                     </div>
                   </td>
                   {runs.map((r, i) => {
-                    const val = (r.summary as Record<string, unknown>)[m.key]
-                    const display = typeof val === 'number' ? val.toFixed(m.unit === 'ms' ? 1 : 0) : '—'
+                    const rawVal = (r.summary as Record<string, unknown>)[m.key]
+                    let display: string
+                    if (m.key === 'msg_loss_ratio') {
+                      display = (Number(rawVal ?? 0) * 100).toFixed(2)
+                    } else if (m.key === 'throughput_bps') {
+                      display = (Number(rawVal ?? 0) / 1000).toFixed(1)
+                    } else {
+                      display = typeof rawVal === 'number' ? rawVal.toFixed(m.unit === 'ms' ? 2 : 0) : '—'
+                    }
                     // Highlight best value
                     const allVals = runs.map(rx => Number((rx.summary as Record<string, unknown>)[m.key] ?? 0))
-                    const isBest = m.unit === 'ms'
+                    const lowerIsBetter = ['avg_registration_latency_ms','avg_auth_latency_ms','avg_key_exchange_latency_ms','msg_loss_ratio','failed_handoffs','total_collisions','total_pkt_failed'].includes(m.key)
+                    const isBest = lowerIsBetter
                       ? Number(display) === Math.min(...allVals)
                       : Number(display) === Math.max(...allVals)
                     return (
