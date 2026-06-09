@@ -8,11 +8,12 @@ import { MetricsDashboard } from './components/MetricsDashboard'
 import { ComparisonPanel } from './components/ComparisonPanel'
 import { LogPanel } from './components/LogPanel'
 import type { SimConfig } from './types/sim'
+import type { LogEntry } from './types/log'
 
 const defaultConfig: SimConfig = {
-  n_vehicles: 10, n_rsus: 3, sim_time: 60,
-  vehicle_speed: 20, rsu_range: 200,
-  area_width: 1000, area_height: 500,
+  n_vehicles: 20, n_rsus: 2, sim_time: 60,
+  vehicle_speed: 40, rsu_range: 75,
+  area_width: 2000, area_height: 500,
 }
 
 type Tab = 'monitor' | 'compare'
@@ -24,10 +25,17 @@ export default function App() {
   const [config, setConfig] = useState<SimConfig>(defaultConfig)
   const [tab, setTab] = useState<Tab>('monitor')
   const [prevComplete, setPrevComplete] = useState(false)
+  const [selectedRunId, setSelectedRunId] = useState<number | null>(null)
 
+  // Auto-save completed run with its logs
   if (state.status === 'complete' && state.summary && !prevComplete) {
     setPrevComplete(true)
-    addRun({ config, summary: state.summary, metrics: state.metrics })
+    addRun({
+      config,
+      summary: state.summary,
+      metrics: state.metrics,
+      logs: log.allEntries,
+    })
   }
   if (state.status !== 'complete' && prevComplete) setPrevComplete(false)
 
@@ -36,7 +44,21 @@ export default function App() {
     log.clear()
     start(cfg)
     setTab('monitor')
+    setSelectedRunId(null)
   }
+
+  // Determine which logs to show in footer
+  const isCompareTab = tab === 'compare'
+  const selectedRun = runs.find(r => r.id === selectedRunId)
+  const footerLogs: LogEntry[] = isCompareTab && selectedRun
+    ? selectedRun.logs
+    : log.entries
+  const footerTotal = isCompareTab && selectedRun
+    ? selectedRun.logs.length
+    : log.allEntries.length
+  const footerLabel = isCompareTab && selectedRun
+    ? `${selectedRun.label} LOG`
+    : 'LIVE LOG'
 
   return (
     <div className="app">
@@ -84,19 +106,27 @@ export default function App() {
               <MetricsDashboard state={state} />
             </>
           ) : (
-            <ComparisonPanel runs={runs} onRemove={removeRun} onClear={clearAll} />
+            <ComparisonPanel
+              runs={runs}
+              onRemove={removeRun}
+              onClear={clearAll}
+              selectedRunId={selectedRunId}
+              onSelectRun={setSelectedRunId}
+            />
           )}
         </section>
       </main>
 
       <LogPanel
-        entries={log.entries}
-        totalCount={log.allEntries.length}
+        entries={footerLogs}
+        totalCount={footerTotal}
+        label={footerLabel}
         filter={log.filter}
         setFilter={log.setFilter}
         paused={log.paused}
         onTogglePause={log.togglePause}
         onClear={log.clear}
+        isHistoric={isCompareTab && selectedRun !== undefined}
       />
     </div>
   )

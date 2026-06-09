@@ -10,9 +10,9 @@ interface Props {
 }
 
 const defaults: SimConfig = {
-  n_vehicles: 10, n_rsus: 3, sim_time: 60,
-  vehicle_speed: 20, rsu_range: 200,
-  area_width: 1000, area_height: 500,
+  n_vehicles: 20, n_rsus: 2, sim_time: 60,
+  vehicle_speed: 40, rsu_range: 75,
+  area_width: 2000, area_height: 500,
 }
 
 const FIELD_META = {
@@ -20,9 +20,9 @@ const FIELD_META = {
   n_rsus:        { label: 'RSUs',          min: 1,   max: 10,   step: 1,   tip: 'Roadside Units (RSUs) are fixed infrastructure nodes that relay messages between vehicles and the Trust Authority. More RSUs increases coverage.' },
   sim_time:      { label: 'SIM TIME (s)',  min: 10,  max: 300,  step: 10,  tip: 'Total simulation duration in seconds. Longer runs capture more handoff and mobility events.' },
   vehicle_speed: { label: 'SPEED (m/s)',   min: 1,   max: 60,   step: 1,   tip: 'Average speed of vehicles in metres per second. Higher speeds increase handoff frequency as vehicles cross RSU boundaries faster.' },
-  rsu_range:     { label: 'RSU RANGE (m)', min: 50,  max: 500,  step: 25,  tip: 'Wireless coverage radius of each RSU in metres. Vehicles outside this range cannot communicate with the RSU and must wait to enter coverage.' },
-  area_width:    { label: 'AREA W (m)',    min: 200, max: 2000, step: 100, tip: 'Width of the simulation area in metres. RSUs are distributed evenly along this axis.' },
-  area_height:   { label: 'AREA H (m)',    min: 200, max: 2000, step: 100, tip: 'Height of the simulation area in metres. Vehicles move randomly within this bounded region.' },
+  rsu_range:     { label: 'RSU RANGE (m)', min: 25,  max: 500,  step: 25,  tip: 'Wireless coverage radius of each RSU in metres. Smaller values increase packet loss and handoff frequency. 75m models dense urban 802.11p deployments.' },
+  area_width:    { label: 'AREA W (m)',    min: 200, max: 5000, step: 100, tip: 'Width of the simulation area in metres. RSUs are distributed evenly along this axis.' },
+  area_height:   { label: 'AREA H (m)',    min: 200, max: 2000, step: 100, tip: 'Height of the simulation area in metres. Vehicles move within this bounded region.' },
 }
 
 function Field({ fieldKey, value, onChange, disabled }: {

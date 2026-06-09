@@ -60,6 +60,9 @@ class SimState:
             "auth_latency_ms": [],
             "key_exchange_latency_ms": [],
             "rsu_load": [],
+            "e2e_delay_ms": [],
+            "throughput_bps": [],
+            "msg_loss_ratio": [],
             "total_collisions": 0,
             "total_handoffs": 0,
             "successful_handoffs": 0,
@@ -71,6 +74,13 @@ class SimState:
         self.authenticated: int = 0
         self.keys_exchanged: int = 0
         self.msg_counts: dict = {}
+        # Packet-level fields from SIM_SUMMARY
+        self.total_bytes_sent: int = 0
+        self.total_pkt_sent: int = 0
+        self.total_pkt_dropped: int = 0
+        self.total_pkt_failed: int = 0
+        self.throughput_bps: float = 0.0
+        self.msg_loss_ratio: float = 0.0
 
     def process(self, event: dict) -> None:
         t = event.get("event")
@@ -104,25 +114,38 @@ class SimState:
             self.msg_counts[msg_type] = self.msg_counts.get(msg_type, 0) + 1
 
         elif t == "SIM_SUMMARY":
-            self.registered = event.get("registered", 0)
-            self.authenticated = event.get("authenticated", 0)
-            self.keys_exchanged = event.get("keys_exchanged", 0)
+            self.registered       = event.get("registered", 0)
+            self.authenticated    = event.get("authenticated", 0)
+            self.keys_exchanged   = event.get("keys_exchanged", 0)
+            self.total_bytes_sent = event.get("total_bytes_sent", 0)
+            self.total_pkt_sent   = event.get("total_pkt_sent", 0)
+            self.total_pkt_dropped= event.get("total_pkt_dropped", 0)
+            self.total_pkt_failed = event.get("total_pkt_failed", 0)
+            self.throughput_bps   = event.get("throughput_bps", 0.0)
+            self.msg_loss_ratio   = event.get("msg_loss_ratio", 0.0)
 
     def summary(self) -> dict:
         def avg(lst): return sum(lst) / len(lst) if lst else 0.0
         return {
-            "avg_registration_latency_ms": avg(self.metrics["registration_latency_ms"]),
-            "avg_auth_latency_ms": avg(self.metrics["auth_latency_ms"]),
-            "avg_key_exchange_latency_ms": avg(self.metrics["key_exchange_latency_ms"]),
-            "avg_rsu_load": avg(self.metrics["rsu_load"]),
-            "total_collisions": self.metrics["total_collisions"],
-            "total_handoffs": self.metrics["total_handoffs"],
-            "successful_handoffs": self.metrics["successful_handoffs"],
-            "failed_handoffs": self.metrics["failed_handoffs"],
-            "registered": self.registered,
-            "authenticated": self.authenticated,
-            "keys_exchanged": self.keys_exchanged,
-            "msg_counts": self.msg_counts,
+            "avg_registration_latency_ms":  avg(self.metrics["registration_latency_ms"]),
+            "avg_auth_latency_ms":          avg(self.metrics["auth_latency_ms"]),
+            "avg_key_exchange_latency_ms":  avg(self.metrics["key_exchange_latency_ms"]),
+            "avg_rsu_load":                 avg(self.metrics["rsu_load"]),
+            "avg_e2e_delay_ms":             avg(self.metrics["e2e_delay_ms"]),
+            "total_collisions":             self.metrics["total_collisions"],
+            "total_handoffs":               self.metrics["total_handoffs"],
+            "successful_handoffs":          self.metrics["successful_handoffs"],
+            "failed_handoffs":              self.metrics["failed_handoffs"],
+            "registered":                   self.registered,
+            "authenticated":                self.authenticated,
+            "keys_exchanged":               self.keys_exchanged,
+            "msg_counts":                   self.msg_counts,
+            "total_bytes_sent":             self.total_bytes_sent,
+            "total_pkt_sent":               self.total_pkt_sent,
+            "total_pkt_dropped":            self.total_pkt_dropped,
+            "total_pkt_failed":             self.total_pkt_failed,
+            "throughput_bps":               self.throughput_bps,
+            "msg_loss_ratio":               self.msg_loss_ratio,
         }
 
 

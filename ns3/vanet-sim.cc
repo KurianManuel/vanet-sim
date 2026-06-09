@@ -44,12 +44,12 @@ using namespace ns3;
 NS_LOG_COMPONENT_DEFINE("VanetSim");
 
 // ── Simulation parameters ──────────────────────────────────────────────────
-static uint32_t g_nVehicles    = 10;
-static uint32_t g_nRSUs        = 3;
+static uint32_t g_nVehicles    = 20;
+static uint32_t g_nRSUs        = 2;
 static double   g_simTime      = 60.0;
-static double   g_vehicleSpeed = 20.0;
-static double   g_rsuRange     = 200.0;
-static double   g_areaWidth    = 1000.0;
+static double   g_vehicleSpeed = 40.0;
+static double   g_rsuRange     = 75.0;
+static double   g_areaWidth    = 2000.0;
 static double   g_areaHeight   = 500.0;
 
 // ── Packet sizes (bytes) derived from BBAAS communication cost analysis ────
@@ -226,28 +226,37 @@ static uint32_t NearestRsu(Ptr<Node> v) {
 static double PacketLatencyMs(double distM, uint32_t bytes) {
     if (distM < 0.1) distM = 0.1;
 
-    // Friis path loss in dB: PL = 20*log10(4*pi*d*f/c)
+    // 802.11p OFDM @ 5.9 GHz, 6 Mbps
+    // Tx power: 16 dBm, Rx sensitivity: -80 dBm
+    // At 75m: rxDbm = 16 - 83.7 = -67.7 dBm (12.3 dB headroom)
+    // Shadowing (8 dB std dev) gives ~7% base loss at 75m,
+    // rising to ~40% at 200m — realistic for urban 802.11p DSRC
     const double freq  = 5.9e9;
     const double c     = 3e8;
-    const double txDbm = 20.0;
-    const double rxMin = -85.0;
-    double pl = 20.0 * std::log10(4.0 * M_PI * distM * freq / c);
+    const double txDbm = 16.0;
+    const double rxMin = -80.0;
+
+    // Friis free-space path loss
+    double pl    = 20.0 * std::log10(4.0 * M_PI * distM * freq / c);
     double rxDbm = txDbm - pl;
 
-    // Add small random fading ±3 dB
-    double fading = (g_rng->GetValue() - 0.5) * 6.0;
-    rxDbm += fading;
+    // Log-normal shadowing: zero-mean Gaussian, std dev 8 dB
+    // Box-Muller transform for proper Gaussian distribution
+    double u1    = std::max(g_rng->GetValue(), 1e-10);
+    double u2    = g_rng->GetValue();
+    double gauss = std::sqrt(-2.0 * std::log(u1)) * std::cos(2.0 * M_PI * u2);
+    rxDbm       += gauss * 8.0;   // two-sided: can help or hurt
+
+    // Small-scale Rayleigh fading ±3 dB
+    rxDbm += (g_rng->GetValue() - 0.5) * 6.0;
 
     if (rxDbm < rxMin) return -1.0;  // packet lost
 
-    // Propagation delay (µs) + transmission time
-    double propUs  = (distM / c) * 1e6;
-    double txUs    = (bytes * 8.0) / 6.0;  // 6 Mbps
-    double totalMs = (propUs + txUs) / 1000.0;
-
-    // Add MAC backoff jitter: 0–15 slots × 9µs each
+    double propUs    = (distM / c) * 1e6;
+    double txUs      = (bytes * 8.0) / 6.0;
+    double totalMs   = (propUs + txUs) / 1000.0;
     double backoffUs = std::floor(g_rng->GetValue() * 16.0) * 9.0;
-    totalMs += backoffUs / 1000.0;
+    totalMs         += backoffUs / 1000.0;
 
     return totalMs;
 }
@@ -374,7 +383,6 @@ static void DoAuthentication(uint32_t idx, uint32_t attempt) {
     Ptr<Node> v  = g_vehicles.Get(idx);
     uint32_t rsu = NearestRsu(v);
     double   d   = Distance(v, g_rsus.Get(rsu));
-    if (d > g_rsuRange) return;
 
     double l1 = PacketLatencyMs(d, PKT_AUTH_SIM);
     double l2 = PacketLatencyMs(d, PKT_AUTH_RSP);
@@ -435,16 +443,12 @@ static void DoRegistration(uint32_t idx, uint32_t attempt) {
     uint32_t rsu = NearestRsu(v);
     double   d   = Distance(v, g_rsus.Get(rsu));
 
-    if (d > g_rsuRange) {
-        Simulator::Schedule(Seconds(1.0), [idx]() { DoRegistration(idx, 0); });
-        return;
-    }
-
-    // Record protocol start time for E2E measurement
-    if (attempt == 0) s.protocolStartTime = now;
-    s.lastRegTime  = now;
     s.connectedRsu = rsu;
+    s.lastRegTime  = now;
+    if (attempt == 0) s.protocolStartTime = now;
 
+    // Use actual distance for loss model — packets may fail even near RSU
+    // due to shadowing, or succeed slightly beyond range with good channel
     double lv2r = PacketLatencyMs(d,    PKT_REG_V2R);
     double lr2t = PacketLatencyMs(50.0, PKT_REG_R2T);
     double lt2r = PacketLatencyMs(50.0, PKT_REG_R2T);
