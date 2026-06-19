@@ -2,6 +2,7 @@
 frontend/node_modules/
 frontend/dist/
 frontend/.env
+frontend/.env.loccal
 
 # Backend
 backend/__pycache__/

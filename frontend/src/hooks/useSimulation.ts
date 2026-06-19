@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import type { SimConfig, SimState, SimEvent, HandoffEvent, SimSummary } from '../types/sim'
 
-const WS_URL = 'ws://localhost:8000/simulate'
+const WS_URL = `${import.meta.env.VITE_WS_URL}/simulate`
 
 const initialState = (): SimState => ({
   status: 'idle',
