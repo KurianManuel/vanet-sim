@@ -10,6 +10,8 @@ interface Props {
   onTogglePause: () => void
   onClear: () => void
   totalCount: number
+  label?: string
+  isHistoric?: boolean
 }
 
 const LEVEL_COLOR: Record<string, string> = {
@@ -78,7 +80,7 @@ function LogRow({ entry, expanded, onToggle }: {
   )
 }
 
-export function LogPanel({ entries, filter, setFilter, paused, onTogglePause, onClear, totalCount }: Props) {
+export function LogPanel({ entries, filter, setFilter, paused, onTogglePause, onClear, totalCount, label = 'EVENT LOG', isHistoric = false }: Props) {
   const [collapsed, setCollapsed] = useState(false)
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [autoScroll, setAutoScroll] = useState(true)
@@ -101,8 +103,9 @@ export function LogPanel({ entries, filter, setFilter, paused, onTogglePause, on
     <div className={`log-panel ${collapsed ? 'collapsed' : ''}`}>
       <div className="log-header">
         <div className="log-header-left">
-          <span className="log-title">EVENT LOG</span>
+          <span className="log-title">{label}</span>
           <span className="log-count">{entries.length.toLocaleString()} / {totalCount.toLocaleString()} entries</span>
+          {isHistoric && <span className="log-historic-badge">HISTORIC</span>}
         </div>
         <div className="log-header-center">
           {(['protocol', 'errors', 'all'] as LogFilter[]).map(f => (
@@ -122,9 +125,11 @@ export function LogPanel({ entries, filter, setFilter, paused, onTogglePause, on
               bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
             }}>↓ Latest</button>
           )}
-          <button className={`log-ctrl-btn ${paused ? 'paused' : ''}`} onClick={onTogglePause}>
-            {paused ? '▶ Resume' : '⏸ Pause'}
-          </button>
+          {!isHistoric && (
+            <button className={`log-ctrl-btn ${paused ? 'paused' : ''}`} onClick={onTogglePause}>
+              {paused ? '▶ Resume' : '⏸ Pause'}
+            </button>
+          )}
           <button className="log-ctrl-btn" onClick={onClear}>✕ Clear</button>
           <button className="log-ctrl-btn collapse-btn" onClick={() => setCollapsed(p => !p)}>
             {collapsed ? '▲ Log' : '▼'}

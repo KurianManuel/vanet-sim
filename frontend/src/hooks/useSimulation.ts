@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import type { SimConfig, SimState, SimEvent, HandoffEvent, SimSummary } from '../types/sim'
+import type { SimConfig, SimState, SimEvent, HandoffEvent, SimSummary, MsgEvent } from '../types/sim'
 
 const WS_URL = `${import.meta.env.VITE_WS_URL}/simulate`
 
@@ -71,8 +71,8 @@ export function useSimulation(onEvent?: (e: SimEvent) => void) {
         return next
       }
 
-      if (event.event === 'MSG_SENT') {
-        const e = event as Extract<SimEvent, { event: 'MSG_SENT' }>
+      if (event.event === 'MSG_SENT' || event.event === 'MSG_RECV') {
+        const e = event as MsgEvent
         next.msgCounts = { ...prev.msgCounts, [e.msg_type]: (prev.msgCounts[e.msg_type] || 0) + 1 }
         return next
       }

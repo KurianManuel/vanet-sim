@@ -4,7 +4,7 @@ import type { SimState } from '../types/sim'
 
 interface Props {
   state: SimState
-  config: { area_width: number; area_height: number; rsu_range: number; n_vehicles: number }
+  config: { area_width: number; area_height: number; rsu_range: number; n_vehicles: number; n_rsus: number }
 }
 
 const W = 800

@@ -14,10 +14,6 @@ interface Props {
   onSelectRun: (id: number | null) => void
 }
 
-function avg(arr: number[]) {
-  return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0
-}
-
 const COMPARE_METRICS = [
   { key: 'avg_registration_latency_ms', label: 'AVG REG',      unit: 'ms', tip: 'Average registration latency across all vehicles in this run.' },
   { key: 'avg_auth_latency_ms',         label: 'AVG AUTH',     unit: 'ms', tip: 'Average authentication latency per vehicle.' },
@@ -123,8 +119,9 @@ export function ComparisonPanel({ runs, onRemove, onClear, selectedRunId, onSele
                       <InfoTip text={m.tip} />
                     </div>
                   </td>
-                  {runs.map((r, i) => {
-                    const rawVal = (r.summary as Record<string, unknown>)[m.key]
+                  {runs.map((r) => {
+                    const summaryRecord = r.summary as unknown as Record<string, number>
+                    const rawVal = summaryRecord[m.key]
                     let display: string
                     if (m.key === 'msg_loss_ratio') {
                       display = (Number(rawVal ?? 0) * 100).toFixed(2)
@@ -134,7 +131,7 @@ export function ComparisonPanel({ runs, onRemove, onClear, selectedRunId, onSele
                       display = typeof rawVal === 'number' ? rawVal.toFixed(m.unit === 'ms' ? 2 : 0) : '—'
                     }
                     // Highlight best value
-                    const allVals = runs.map(rx => Number((rx.summary as Record<string, unknown>)[m.key] ?? 0))
+                    const allVals = runs.map(rx => Number((rx.summary as unknown as Record<string, number>)[m.key] ?? 0))
                     const lowerIsBetter = ['avg_registration_latency_ms','avg_auth_latency_ms','avg_key_exchange_latency_ms','msg_loss_ratio','failed_handoffs','total_collisions','total_pkt_failed'].includes(m.key)
                     const isBest = lowerIsBetter
                       ? Number(display) === Math.min(...allVals)

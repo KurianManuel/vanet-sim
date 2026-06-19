@@ -25,8 +25,14 @@ export interface MsgEvent {
   msg_type: string
   latency_ms: number
   success: boolean
+  bytes?: number
   phase?: string
   direction?: string
+  retry?: number
+  failed?: boolean
+  step?: number
+  complete?: boolean
+  sc_delay_ms?: number
 }
 
 export interface MetricEvent {

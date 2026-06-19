@@ -29,10 +29,10 @@ function eventToEntry(event: SimEvent): LogEntry | null {
 
   if (t === 'MSG_SENT' || t === 'MSG_RECV') {
     const e = event as Extract<SimEvent, { event: 'MSG_SENT' | 'MSG_RECV' }>
-    const phase = (e as Record<string, unknown>).phase as string | undefined
-    const dir   = (e as Record<string, unknown>).direction as string | undefined
-    const retry = (e as Record<string, unknown>).retry as number | undefined
-    const failed = (e as Record<string, unknown>).failed as boolean | undefined
+    const phase  = e.phase
+    const dir    = e.direction
+    const retry  = e.retry
+    const failed = e.failed
 
     let category: LogCategory = 'REGISTRATION'
     if (e.msg_type.startsWith('AUTH'))        category = 'AUTHENTICATION'
@@ -42,7 +42,7 @@ function eventToEntry(event: SimEvent): LogEntry | null {
 
     let detail: string
     if (!e.success && failed) {
-      detail = `Packet permanently lost after 3 retries. Vehicle was likely outside RSU coverage (>${ (e as Record<string,unknown>).bytes ?? '?'}B dropped). Protocol phase cannot complete until vehicle re-enters range.`
+      detail = `Packet permanently lost after 3 retries. Vehicle was likely outside RSU coverage (${e.bytes ?? '?'}B dropped). Protocol phase cannot complete until vehicle re-enters range.`
     } else if (!e.success && retry) {
       detail = `Packet dropped by 802.11p channel (attempt ${retry}/3). Cause: log-normal shadowing or Rayleigh fading pushed received signal below -80 dBm threshold. Retrying with ${retry === 1 ? '500' : retry === 2 ? '1000' : '2000'}ms backoff.`
     } else if (!e.success) {
@@ -105,8 +105,9 @@ function eventToEntry(event: SimEvent): LogEntry | null {
   }
 
   if (t === 'SIM_COMPLETE') {
+    const simTime = (event as unknown as { sim_time?: number }).sim_time ?? 0
     return makeEntry(
-      (event as Record<string, unknown>).sim_time as number ?? 0,
+      simTime,
       'info', 'SYSTEM',
       'Simulation complete',
       { detail: 'All events processed — run saved to comparison' }
@@ -114,9 +115,10 @@ function eventToEntry(event: SimEvent): LogEntry | null {
   }
 
   if (t === 'ERROR') {
+    const msg = (event as unknown as { msg?: string }).msg ?? 'Unknown'
     return makeEntry(
       0, 'error', 'SYSTEM',
-      `Error: ${String((event as Record<string, unknown>).msg ?? 'Unknown')}`,
+      `Error: ${msg}`,
       { success: false }
     )
   }

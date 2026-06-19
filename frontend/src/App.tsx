@@ -26,16 +26,11 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('monitor')
   const [prevComplete, setPrevComplete] = useState(false)
   const [selectedRunId, setSelectedRunId] = useState<number | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // Auto-save completed run with its logs
   if (state.status === 'complete' && state.summary && !prevComplete) {
     setPrevComplete(true)
-    addRun({
-      config,
-      summary: state.summary,
-      metrics: state.metrics,
-      logs: log.allEntries,
-    })
+    addRun({ config, summary: state.summary, metrics: state.metrics, logs: log.allEntries })
   }
   if (state.status !== 'complete' && prevComplete) setPrevComplete(false)
 
@@ -45,20 +40,14 @@ export default function App() {
     start(cfg)
     setTab('monitor')
     setSelectedRunId(null)
+    setSidebarOpen(false)
   }
 
-  // Determine which logs to show in footer
   const isCompareTab = tab === 'compare'
   const selectedRun = runs.find(r => r.id === selectedRunId)
-  const footerLogs: LogEntry[] = isCompareTab && selectedRun
-    ? selectedRun.logs
-    : log.entries
-  const footerTotal = isCompareTab && selectedRun
-    ? selectedRun.logs.length
-    : log.allEntries.length
-  const footerLabel = isCompareTab && selectedRun
-    ? `${selectedRun.label} LOG`
-    : 'LIVE LOG'
+  const footerLogs: LogEntry[] = isCompareTab && selectedRun ? selectedRun.logs : log.entries
+  const footerTotal = isCompareTab && selectedRun ? selectedRun.logs.length : log.allEntries.length
+  const footerLabel = isCompareTab && selectedRun ? `${selectedRun.label} LOG` : 'LIVE LOG'
 
   return (
     <div className="app">
@@ -96,9 +85,14 @@ export default function App() {
       )}
 
       <main className="app-main">
-        <aside className="app-sidebar">
+        <aside className={`app-sidebar ${sidebarOpen ? 'open' : ''}`}>
+          <button className="sidebar-toggle" onClick={() => setSidebarOpen(p => !p)}>
+            <span>⚙ SIM PARAMETERS</span>
+            <span className="sidebar-toggle-icon">▼</span>
+          </button>
           <ControlPanel onStart={handleStart} onStop={stop} onReset={reset} status={state.status} />
         </aside>
+
         <section className="app-content">
           {tab === 'monitor' ? (
             <>

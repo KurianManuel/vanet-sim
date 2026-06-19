@@ -1,4 +1,5 @@
 import type { SimConfig, SimSummary } from './sim'
+import type { LogEntry } from './log'
 
 export interface RunRecord {
   id: number
@@ -10,7 +11,11 @@ export interface RunRecord {
     auth_latency: number[]
     key_exchange_latency: number[]
     rsu_load: number[]
+    e2e_delay: number[]
+    throughput_bps: number[]
+    msg_loss_ratio: number[]
   }
+  logs: LogEntry[]
   completedAt: number
 }
 

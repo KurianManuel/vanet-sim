@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react'
 import type { RunRecord, ComparisonStore } from '../types/comparison'
-import type { SimConfig, SimSummary } from '../types/sim'
 
 const MAX_RUNS = 5
 
@@ -8,8 +7,6 @@ const RUN_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#a78bfa', '#ef4444']
 
 export function useComparison(): ComparisonStore {
   const [runs, setRuns] = useState<RunRecord[]>([])
-  const counter = useState(0)
-  const [nextId, setNextId] = [counter[0], counter[1]]
 
   const addRun = useCallback((run: Omit<RunRecord, 'id' | 'label' | 'completedAt'>) => {
     setRuns(prev => {
