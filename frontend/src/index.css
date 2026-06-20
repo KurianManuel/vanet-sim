@@ -1096,3 +1096,157 @@ html, body, #root { overflow: hidden; }
   letter-spacing: 0.5px;
   align-self: center;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE — MOBILE & TABLET
+   Breakpoints:
+     < 640px  → mobile phone
+     640–1024px → tablet
+     > 1024px → desktop (default styles above)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Shared tablet + mobile ── */
+@media (max-width: 1024px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  .compare-charts {
+    grid-template-columns: 1fr;
+  }
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stat-grid[style*="repeat(3"] {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* ── Mobile phone ── */
+@media (max-width: 640px) {
+  /* App shell */
+  .app { height: 100dvh; }
+
+  /* Header */
+  .app-header {
+    padding: 0 12px;
+    height: 48px;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .header-logo { font-size: 16px; letter-spacing: 3px; }
+  .header-sub { display: none; }
+  .header-center { flex: 1; }
+  .tab-btn { padding: 5px 10px; font-size: 11px; }
+  .header-badge { font-size: 9px; padding: 2px 7px; }
+  .header-time { font-size: 11px; }
+
+  /* Layout: stack vertically, no sidebar */
+  .app-main {
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Sidebar becomes a collapsible panel at the top */
+  .app-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-dark);
+    max-height: 48px;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    flex-shrink: 0;
+  }
+  .app-sidebar.open {
+    max-height: 520px;
+    overflow-y: auto;
+  }
+
+  /* Sidebar toggle button */
+  .sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: 48px;
+    background: var(--bg-sidebar);
+    color: var(--text-muted-dark);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border: none;
+    width: 100%;
+    font-family: var(--font-ui);
+  }
+  .sidebar-toggle-icon { font-size: 14px; transition: transform 0.2s; }
+  .app-sidebar.open .sidebar-toggle-icon { transform: rotate(180deg); }
+
+  /* Content area */
+  .app-content {
+    flex: 1;
+    padding: 10px;
+    gap: 10px;
+    min-height: 0;
+  }
+
+  /* Topology map */
+  .topology-panel .topo-svg { min-height: 160px; max-height: 190px; }
+  .topo-legend { flex-wrap: wrap; gap: 6px; padding: 6px 10px; }
+  .topo-channel-note { display: none; }
+
+  /* Metrics */
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .stat-box { padding: 10px 10px; }
+  .stat-value { font-size: 17px; }
+  .stat-label { font-size: 8px; }
+
+  /* Charts */
+  .chart-panel { padding-bottom: 6px; }
+
+  /* Log panel */
+  .log-panel { height: 180px; }
+  .log-panel.collapsed { height: 36px; }
+  .log-header { padding: 0 10px; gap: 6px; }
+  .log-header-center { display: none; }
+  .log-title { font-size: 9px; }
+  .log-count { display: none; }
+  .log-row { padding: 3px 10px; gap: 4px; }
+  .log-wall { display: none; }
+  .log-detail { padding-left: 80px; }
+
+  /* Comparison */
+  .run-badges { gap: 6px; padding: 8px 10px; }
+  .run-badge { flex-wrap: wrap; gap: 4px; }
+  .run-badge-cfg { font-size: 9px; }
+  .compare-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .compare-table { font-size: 11px; min-width: 340px; }
+  .compare-th { padding: 6px 10px; font-size: 9px; }
+  .compare-td { padding: 7px 10px; font-size: 11px; }
+
+  /* Buttons — larger touch targets */
+  .btn { padding: 11px 4px; font-size: 13px; }
+  .tab-btn { min-height: 34px; }
+  .log-ctrl-btn { padding: 4px 10px; font-size: 11px; }
+
+  /* Tooltip portal — keep within screen on mobile */
+  .info-tooltip-portal { width: 180px; font-size: 10px; }
+
+  /* Saved bar */
+  .saved-bar { font-size: 11px; padding: 5px 12px; }
+}
+
+/* ── Tablet ── */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .app-sidebar { width: 220px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .topology-panel .topo-svg { min-height: 180px; max-height: 220px; }
+  .log-panel { height: 190px; }
+  .log-header-center { gap: 3px; }
+  .log-filter-btn { padding: 2px 8px; font-size: 10px; }
+}
+
+/* ── Ensure sidebar toggle hidden on desktop ── */
+@media (min-width: 641px) {
+  .sidebar-toggle { display: none; }
+  .app-sidebar { max-height: none !important; overflow-y: auto; }
+}
