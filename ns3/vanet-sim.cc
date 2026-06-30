@@ -124,6 +124,9 @@ struct SimMetrics {
     uint32_t totalPktSent       = 0;
     uint32_t totalPktDropped    = 0;
     uint32_t totalPktFailed     = 0;   // exhausted retries
+
+    // Live per-RSU connected-vehicle counts, indexed by RSU id
+    std::map<uint32_t, uint32_t> rsuConnectedCount;
 };
 
 static std::map<uint32_t, VehicleState> g_states;
@@ -212,6 +215,39 @@ static uint32_t NearestRsu(Ptr<Node> v) {
         if (d < mn) { mn = d; best = i; }
     }
     return best;
+}
+
+/*
+ * Recompute real per-RSU connected-vehicle counts from live state.
+ * A vehicle counts toward an RSU's load only if it is currently
+ * registered AND that RSU is its connectedRsu — i.e. actually using
+ * that RSU's airtime, not just configured to use it.
+ * Emits one rsu_load METRIC per RSU plus the max-load figure, which
+ * is the value that actually matters for congestion analysis.
+ */
+static void EmitRsuLoad() {
+    for (uint32_t i = 0; i < g_nRSUs; ++i) g_metrics.rsuConnectedCount[i] = 0;
+
+    for (auto& kv : g_states) {
+        const VehicleState& s = kv.second;
+        if (s.registered && s.connectedRsu != UINT32_MAX && s.connectedRsu < g_nRSUs) {
+            g_metrics.rsuConnectedCount[s.connectedRsu]++;
+        }
+    }
+
+    uint32_t maxLoad = 0;
+    for (uint32_t i = 0; i < g_nRSUs; ++i) {
+        uint32_t load = g_metrics.rsuConnectedCount[i];
+        if (load > maxLoad) maxLoad = load;
+        Emit("{\"event\":\"METRIC\",\"time\":" + F4(Simulator::Now().GetSeconds())
+             + ",\"metric\":\"rsu_load_rsu" + std::to_string(i) + "\",\"value\":"
+             + F4(static_cast<double>(load)) + "}");
+    }
+
+    // Primary rsu_load metric: the busiest RSU's live connected count.
+    // This is what should drive congestion alerts and comparisons —
+    // a single average hides the imbalance entirely.
+    EmitMetric("rsu_load", static_cast<double>(maxLoad));
 }
 
 /*
@@ -423,7 +459,7 @@ static void DoAuthentication(uint32_t idx, uint32_t attempt) {
                   "\"phase\":\"authentication\",\"sc_delay_ms\":" + F4(scDelay));
         g_states[idx].authenticated = true;
         EmitMetric("auth_latency_ms", total);
-        EmitMetric("rsu_load", static_cast<double>(g_nVehicles) / g_nRSUs);
+        EmitRsuLoad();
         Simulator::Schedule(MilliSeconds(l2Full + 10), [idx]() { DoKeyExchange(idx, 0); });
     });
 }
@@ -519,9 +555,11 @@ static void CheckHandoff(uint32_t idx) {
             s.registered = s.authenticated = s.keysExchanged = false;
             s.regRetries = s.authRetries = s.keyRetries = 0;
             s.connectedRsu = nr;
+            EmitRsuLoad();
             Simulator::Schedule(MilliSeconds(10.0), [idx]() { DoRegistration(idx, 0); });
         } else {
             g_metrics.failedHandoffs++;
+            EmitRsuLoad();
         }
         g_metrics.totalHandoffs++;
     }
@@ -664,11 +702,18 @@ int main(int argc, char* argv[]) {
         if (kv.second.keysExchanged) keys++;
     }
 
+    EmitRsuLoad();
+
     double elapsed = g_simTime;
     double finalTput = elapsed > 0 ? (g_metrics.totalBytesSent * 8.0) / elapsed : 0.0;
     uint32_t totalAttempted = g_metrics.totalPktSent + g_metrics.totalPktDropped;
     double finalLoss = totalAttempted > 0
         ? static_cast<double>(g_metrics.totalPktDropped) / totalAttempted : 0.0;
+
+    uint32_t finalMaxRsuLoad = 0;
+    for (uint32_t i = 0; i < g_nRSUs; ++i)
+        if (g_metrics.rsuConnectedCount[i] > finalMaxRsuLoad)
+            finalMaxRsuLoad = g_metrics.rsuConnectedCount[i];
 
     Emit("{\"event\":\"SIM_SUMMARY\""
          ",\"time\":"               + F4(g_simTime) +
@@ -684,7 +729,8 @@ int main(int argc, char* argv[]) {
          ",\"total_pkt_dropped\":"  + std::to_string(g_metrics.totalPktDropped) +
          ",\"total_pkt_failed\":"   + std::to_string(g_metrics.totalPktFailed) +
          ",\"throughput_bps\":"     + F4(finalTput) +
-         ",\"msg_loss_ratio\":"     + F4(finalLoss) + "}");
+         ",\"msg_loss_ratio\":"     + F4(finalLoss) +
+         ",\"max_rsu_load\":"       + std::to_string(finalMaxRsuLoad) + "}");
 
     Simulator::Destroy();
     return 0;

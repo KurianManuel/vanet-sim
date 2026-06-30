@@ -81,6 +81,7 @@ class SimState:
         self.total_pkt_failed: int = 0
         self.throughput_bps: float = 0.0
         self.msg_loss_ratio: float = 0.0
+        self.max_rsu_load: int = 0
 
     def process(self, event: dict) -> None:
         t = event.get("event")
@@ -123,6 +124,7 @@ class SimState:
             self.total_pkt_failed = event.get("total_pkt_failed", 0)
             self.throughput_bps   = event.get("throughput_bps", 0.0)
             self.msg_loss_ratio   = event.get("msg_loss_ratio", 0.0)
+            self.max_rsu_load     = event.get("max_rsu_load", 0)
 
     def summary(self) -> dict:
         def avg(lst): return sum(lst) / len(lst) if lst else 0.0
@@ -146,6 +148,7 @@ class SimState:
             "total_pkt_failed":             self.total_pkt_failed,
             "throughput_bps":               self.throughput_bps,
             "msg_loss_ratio":               self.msg_loss_ratio,
+            "max_rsu_load":                 self.max_rsu_load,
         }
 
 
