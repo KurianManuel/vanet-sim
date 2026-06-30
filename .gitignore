@@ -24,3 +24,13 @@ dist-ssr
 *.sw?
 
 .env.local
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Windows Zone Identifier ADS files (with Unicode colon)
+*Zone.Identifier
+*.Zone.Identifier
+*Zone.Identifier
