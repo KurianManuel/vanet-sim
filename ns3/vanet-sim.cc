@@ -578,7 +578,7 @@ static void BroadcastPositions() {
         EmitPosition(g_nVehicles + i, "rsu", p.x, p.y);
     }
     if (Simulator::Now().GetSeconds() < g_simTime)
-        Simulator::Schedule(Seconds(1.0), &BroadcastPositions);
+        Simulator::Schedule(Seconds(0.5), &BroadcastPositions);
 }
 
 // ── Main ───────────────────────────────────────────────────────────────────
@@ -597,6 +597,17 @@ int main(int argc, char* argv[]) {
     g_rng = CreateObject<UniformRandomVariable>();
     g_rng->SetAttribute("Min", DoubleValue(0.0));
     g_rng->SetAttribute("Max", DoubleValue(1.0));
+
+    // Run at 2x real time so vehicle movement is visible in the frontend.
+    // Without this the simulation completes in ~5-10 real seconds and the
+    // frontend only sees the start and end states.
+    GlobalValue::Bind("SimulatorImplementationType",
+        StringValue("ns3::RealtimeSimulatorImpl"));
+    GlobalValue::Bind("ChecksumEnabled", BooleanValue(false));
+    Config::SetDefault("ns3::RealtimeSimulator::SynchronizationMode",
+        StringValue("HardLimit"));
+    Config::SetDefault("ns3::RealtimeSimulator::HardLimit",
+        StringValue("+100000000ns"));  // 100ms tolerance before giving up on sync
 
     Emit("{\"event\":\"SIM_CONFIG\""
          ",\"nVehicles\":"    + std::to_string(g_nVehicles) +
