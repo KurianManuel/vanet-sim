@@ -598,14 +598,11 @@ int main(int argc, char* argv[]) {
     g_rng->SetAttribute("Min", DoubleValue(0.0));
     g_rng->SetAttribute("Max", DoubleValue(1.0));
 
-    // Run at 2x real time so vehicle movement is visible in the frontend.
-    // SoftLimit mode keeps the simulation running even if the Pi falls
-    // behind — it just lets simulated time get ahead of wall time rather
-    // than aborting. Necessary on Pi Zero 2W under CPU load.
+    // Pace simulation to ~2x real time so vehicle movement is visible.
+    // Default SynchronizationMode is SYNC_BEST_EFFORT — never aborts,
+    // lets simulated time run ahead if Pi falls behind under CPU load.
     GlobalValue::Bind("SimulatorImplementationType",
         StringValue("ns3::RealtimeSimulatorImpl"));
-    Config::SetDefault("ns3::RealtimeSimulator::SynchronizationMode",
-        EnumValue(1));  // 1 = SoftLimit
 
     Emit("{\"event\":\"SIM_CONFIG\""
          ",\"nVehicles\":"    + std::to_string(g_nVehicles) +
