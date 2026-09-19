@@ -245,8 +245,6 @@ static void EmitRsuLoad() {
     }
 
     // Primary rsu_load metric: the busiest RSU's live connected count.
-    // This is what should drive congestion alerts and comparisons —
-    // a single average hides the imbalance entirely.
     EmitMetric("rsu_load", static_cast<double>(maxLoad));
 }
 
